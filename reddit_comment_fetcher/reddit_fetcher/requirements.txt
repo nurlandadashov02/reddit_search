@@ -1,0 +1,4 @@
+requests
+praw
+opensearch-py
+requests-aws4auth
