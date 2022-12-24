@@ -1,11 +1,19 @@
+import json
+import logging
 from opensearchpy import OpenSearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 
+logger = logging.getLogger('reddit_fetch_log')
+logger.setLevel(logging.INFO)
+
 
 def lambda_handler(event, context):
+    logger.info(event)
     # Set the Reddit post ID
-    post_id = event["post_id"]
-    query = event["query"]
+    post_id = json.loads(event['body'])["post_id"]
+    query = json.loads(event['body'])["query"]
+
+    logger.info(f"post_id: {post_id}, query: {query}")
 
     credentials = {
         "access_key": "AKIA3UCKDXR5U54W65PC",
@@ -37,8 +45,21 @@ def lambda_handler(event, context):
         }
     )
 
+    logger.info(resp)
+
     filtered_comments = []
     for hit in resp["hits"]["hits"]:
         filtered_comments.append(hit["_source"]["text"])
 
-    return filtered_comments
+    logger.info(filtered_comments)
+
+    return {
+        "statusCode": 200,
+        "headers": {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Credentials": True
+        },
+        "body": json.dumps({
+            "comments": filtered_comments
+        })
+    }

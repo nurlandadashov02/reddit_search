@@ -1,10 +1,16 @@
 import praw
+import boto3
+import json
+import logging
 from opensearchpy import OpenSearch, RequestsHttpConnection
 from opensearchpy.helpers import bulk
 from requests_aws4auth import AWS4Auth
 
+logger = logging.getLogger('reddit_fetch_log')
+logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
+    logger.info(event)
     # Set Reddit credentials
     reddit = praw.Reddit(client_id="TM-o8OhRZBUKP42CeyhILQ",
                          client_secret="3MvilBApHioYD5DJ8Q_s0nYRpzaUfw",
@@ -14,9 +20,10 @@ def lambda_handler(event, context):
     # post_id = "6byls7"
     # query = "I'm try"
 
-    post_id = event["post_id"]
-    query = event["query"]
+    post_id = json.loads(event['body'])["post_id"]
+    query = json.loads(event['body'])["query"]
 
+    logger.info(f"post_id: {post_id}, query: {query}")
     # Fetch comments from Reddit post
     submission = reddit.submission(post_id)
 
@@ -40,6 +47,7 @@ def lambda_handler(event, context):
         connection_class=RequestsHttpConnection
     )
 
+    logger.info(f"comments: {submission.comments.list()}")
     bulk_data = []
     for i, comment in enumerate(submission.comments.list()):
         if comment.body:
@@ -54,6 +62,40 @@ def lambda_handler(event, context):
             )
 
     bulk(client, bulk_data)
+
+    logger.info(f"Success!")
+
+    import boto3
+
+    # Create an AWS session
+    session = boto3.Session(
+        aws_access_key_id=credentials["access_key"],
+        aws_secret_access_key=credentials["secret_key"],
+        region_name=region
+    )
+
+    # Create an AWS Lambda client using the session
+    lambda_client = session.client('lambda')
+
+    # Invoke the Lambda function
+    response = lambda_client.invoke(
+        FunctionName='redditsearcher-RedditCommentSearcherFunction-A2fCPbynDhoK',  # name of the Lambda function
+        InvocationType='RequestResponse',  # synchronous execution
+        Payload=json.dumps({"body": event['body']})  # JSON input for the function
+    )
+    logger.info(response)
+    # Get the function's output
+    output = json.loads(response['Payload'].read())
+    logger.info(output)
+
+    return {
+        "statusCode": 200,
+        "headers": {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Credentials": True
+        },
+        "body": output['body']
+    }
 
     # resp = client.search(
     #     index=post_id,
