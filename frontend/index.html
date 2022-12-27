@@ -1,0 +1,161 @@
+<html>
+	<head>
+		<script type="text/javascript">
+      window.onload = function() {
+  		  document.querySelector("form").addEventListener("submit", function(event) {
+          event.preventDefault(); // Prevent form submission
+
+          var post = document.getElementById("post_id").value;
+          var keyword = document.getElementById("keyword").value;
+          event.preventDefault();
+          var formData = new FormData(event.target);
+          if (formData.has("api1")) {
+            // Make a request to API 1 using the inputs
+            const url = "https://zxek2zokdl.execute-api.us-east-1.amazonaws.com/Prod/reddit";
+            fetch(url, {
+              method: 'POST',
+              body: JSON.stringify({
+              "post_id": post,
+              "query": keyword
+              })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Get a reference to an HTML element where you want to display the data
+                const displayElement = document.getElementById('display');
+
+                // Set the innerHTML of the element to the data
+                displayElement.innerHTML = ''; // Clear the element
+                data.comments.forEach(item => {
+                  const p = document.createElement('p');
+                  p.innerText = item;
+                  displayElement.appendChild(p);
+
+                  const hr = document.createElement('hr');
+                  displayElement.appendChild(hr);
+                });
+
+                // Use a regular expression to search for the keyword within the content of the div
+                const regex = new RegExp(keyword, 'gi');
+                const content = displayElement.innerHTML;
+                const highlightedContent = content.replace(regex, '<span class="highlight">$&</span>');
+
+                // Update the innerHTML of the div with the highlighted content
+                displayElement.innerHTML = highlightedContent;
+
+                // Show the popup window
+                popup.style.display = 'block';
+            });
+          } else if (formData.has("api2")) {
+            // Make a request to API 2 using the inputs
+            const url = "https://k1pc6137jc.execute-api.us-east-1.amazonaws.com/Prod/reddit_search";
+            fetch(url, {
+              method: 'POST',
+              body: JSON.stringify({
+              "post_id": post,
+              "query": keyword
+              })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Get a reference to an HTML element where you want to display the data
+                const displayElement = document.getElementById('display');
+
+                // Set the innerHTML of the element to the data
+                displayElement.innerHTML = ''; // Clear the element
+                data.comments.forEach(item => {
+                  const p = document.createElement('p');
+                  p.innerText = item;
+                  displayElement.appendChild(p);
+
+                  const hr = document.createElement('hr');
+                  displayElement.appendChild(hr);
+                });
+
+                // Use a regular expression to search for the keyword within the content of the div
+                const regex = new RegExp(keyword, 'gi');
+                const content = displayElement.innerHTML;
+                const highlightedContent = content.replace(regex, '<span class="highlight">$&</span>');
+
+                // Update the innerHTML of the div with the highlighted content
+                displayElement.innerHTML = highlightedContent;
+
+                // Show the popup window
+                popup.style.display = 'block';
+            });
+          }
+        });
+      }
+      // Function to close the popup window
+      function closePopup() {
+        var form = document.getElementsByName("reddit_search")[0];
+        form.reset();
+        document.getElementById('popup').style.display = 'none';
+      }
+		</script>
+	</head>
+	<body style="background-image: url(https://9to5mac.com/wp-content/uploads/sites/6/2022/04/Reddit-Search.jpg?quality=82&strip=all); background-size: cover; background-repeat: no-repeat;">
+    <style>
+      form {
+        margin: 0 auto; 
+        width:270px;
+      }
+      input {
+        margin: 2 auto;
+        width:270px;
+        padding:5px;
+        border-radius:10px;
+      }
+      label {
+        font-weight: bold;
+        width: 130px;
+        float: left;
+      }
+      #popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        border: 1px solid black;
+        padding: 20px;
+        /* Add the following styles */
+        width: auto;
+        height: auto;
+        max-width: 90%;
+        max-height: 90%;
+        overflow: auto;
+        display: none; /* Hide the popup by default */
+      }
+      #close-button {
+        display: flex;
+        justify-content: center;
+      }
+      #close-button button{
+        padding:5px;
+        border-radius:10px;
+      }
+      .highlight {
+        background-color: yellow;
+        font-weight: bold;
+      }
+    </style>
+		<form name="reddit_search">
+  			<label for="post_id"><strong>Post Id:</strong></label>
+  			<input type="text" id="post_id" name="post_id"><br>
+  			<label for="keyword"><strong>Keyword:</strong></label>
+  			<input type="text" id="keyword" name="keyword"><br><br>
+  		  <input type="submit" name="api1" value="Get search result for new post"/><br>
+        <input type="submit" name="api2" value="Get search result for previously searched post"/><br>
+		</form>
+    <div id="popup">
+      <p><strong>Found comments:</strong></p>
+      <div id="display">
+        <!-- Popup content goes here -->
+      </div>
+      <div id="close-button">
+        <button onclick="closePopup()">Close</button>
+      </div>
+    </div>
+	</body>
+</html>
